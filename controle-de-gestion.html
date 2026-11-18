@@ -88,10 +88,10 @@
 <header>
   <h1>📊 Contrôle de gestion</h1>
   <div class="toolbar">
-    <label for="yearSelect">Exercice</label>
+    <label for="yearSelect">Partie</label>
     <select id="yearSelect"></select>
-    <button class="btn" id="btnNewYear">+ Nouvel exercice</button>
-    <button class="btn" id="btnDupYear">Dupliquer l'exercice</button>
+    <button class="btn" id="btnNewYear">+ Nouvelle partie</button>
+    <button class="btn" id="btnDupYear">Dupliquer la partie</button>
     <button class="btn" id="btnClearMonth">Effacer ce tour</button>
     <span id="saveStatus">Enregistré ✓</span>
   </div>
@@ -334,8 +334,8 @@ const IND_META = {
     formule:"Gearing = Dettes financières ÷ Capitaux propres<br>avec Dettes financières = Emprunts + Concours bancaires",
     norme:"Taux d'endettement accepté par le banquier DROONY : ≤ 2 × capitaux propres (gearing ≤ 2). Au-delà, plus aucun nouvel emprunt possible : seuls des apports ou les bénéfices mis en réserve (qui regonflent les capitaux propres) peuvent ramener le ratio sous 2. ≤ 1 = marge confortable ; 1 à 2 = zone à surveiller avant chaque investissement ; &gt; 2 = banquier fermé."},
   agios:{label:"Agios découvert (projetés)",
-    formule:"Agios = −Trésorerie nette × 8 %/an (si trésorerie nette &lt; 0)<br>Prélevés sur l'exercice suivant",
-    norme:"Quand la trésorerie nette est négative, la banque facture 8 % par an d'agios, prélevés l'année suivante : le coût réel du découvert est différé, pas annulé. À comparer au taux d'emprunt du banquier (6 %) : si le besoin de trésorerie persiste, un emprunt est moins cher que le découvert. Cette carte est la projection du coût caché qu'une TN négative fait exister."},
+    formule:"Agios = −Trésorerie nette × 8 %/an (si trésorerie nette &lt; 0)<br>Prélevés l'année suivante (tour suivant)",
+    norme:"Quand la trésorerie nette est négative, la banque facture 8 % par an d'agios, payés au tour suivant : le coût réel du découvert est différé, pas annulé. À comparer au taux d'emprunt du banquier (6 %) : si le besoin de trésorerie persiste, un emprunt est moins cher que le découvert. Cette carte est la projection du coût caché qu'une TN négative fait exister."},
   subv:{label:"Résultat + subventions",
     formule:"Résultat + subventions = Résultat net + Subventions challenges",
     norme:"Les primes de challenges se cumulent au bénéfice en fin de jeu : c'est le vrai classant final. Attention : ne comptabilisez les primes qu'une fois officiellement remportées — les autres équipes peuvent décrocher d'autres récompenses au fil des tours. Basez la gestion courante sur le résultat net seul, et cette ligne sur la projection de position finale."},
@@ -351,7 +351,7 @@ const IND_META = {
 
 let meta = loadMeta();
 let years = listYears();
-let curYear = years.length ? years[years.length - 1] : new Date().getFullYear();
+let curYear = years.length ? years[years.length - 1] : 1;
 if (!years.includes(curYear)) { years.push(curYear); years.sort(); }
 let curMonth = new Date().getMonth();
 let curTab = "pilotage";
@@ -764,7 +764,7 @@ function renderCards(){
 
 function renderPilotage(){
   const m = month(), c = compute(m), b = computeBench(m);
-  document.getElementById("pilotage-month").textContent = "Synthèse — Tour " + (curMonth+1) + " · Exercice " + curYear;
+  document.getElementById("pilotage-month").textContent = "Synthèse — Tour " + (curMonth+1) + " (année " + (curMonth+1) + ") · Partie " + curYear;
 
   document.getElementById("cards-pilotage").innerHTML =
     card("Chiffre d'affaires", eur(num(m.ca)), "n", "ca",
@@ -878,7 +878,7 @@ function renderAnnual(){
 
 function renderMarche(){
   const m = month(), b = computeBench(m), c = compute(m);
-  document.getElementById("bench-month").textContent = "Résultats du marché — Tour " + (curMonth+1) + " · Exercice " + curYear;
+  document.getElementById("bench-month").textContent = "Résultats du marché — Tour " + (curMonth+1) + " · Partie " + curYear;
   const mkt = document.querySelector('[data-bfield="marketCA"]');
   if (mkt && document.activeElement !== mkt) mkt.value = m.bench.marketCA;
   renderTeamsTable();
@@ -912,7 +912,7 @@ function renderChartsMarche(){
 
 function renderSim(){
   const m = month();
-  document.getElementById("sim-base-month").textContent = "Tour " + (curMonth+1) + " · Exercice " + curYear;
+  document.getElementById("sim-base-month").textContent = "Tour " + (curMonth+1) + " · Partie " + curYear;
   document.getElementById("sim-fields").innerHTML = SIM_FIELDS.map(f=>
     '<div class="field"><label>' + f.label + '</label>' +
     '<input type="number" step="any" data-sim="' + f.k + '" value="' + (m.sim[f.k]||0) + '"></div>'
@@ -1174,7 +1174,7 @@ document.getElementById("btnNewYear").addEventListener("click", ()=>{
 
 document.getElementById("btnDupYear").addEventListener("click", ()=>{
   const y = curYear + 1;
-  if (years.includes(y) && !confirm("L'exercice " + y + " existe déjà. Le remplacer par une copie de " + curYear + " ?")) return;
+  if (years.includes(y) && !confirm("La partie " + y + " existe déjà. La remplacer par une copie de " + curYear + " ?")) return;
   if (!years.includes(y)) years.push(y);
   years.sort();
   saveYearData(y, cur());
@@ -1182,7 +1182,7 @@ document.getElementById("btnDupYear").addEventListener("click", ()=>{
 });
 
 document.getElementById("btnClearMonth").addEventListener("click", ()=>{
-  if (!confirm("Effacer toutes les données du Tour " + (curMonth+1) + " — exercice " + curYear + " ?")) return;
+  if (!confirm("Effacer toutes les données du Tour " + (curMonth+1) + " (année " + (curMonth+1) + ", partie " + curYear + ") ?")) return;
   const d = cur(); d[curMonth] = defaultMonth(); saveYearData(curYear, d);
   renderAll();
 });
@@ -1196,10 +1196,10 @@ document.getElementById("btnAddTeam").addEventListener("click", ()=>{
 });
 
 document.getElementById("btnApplySim").addEventListener("click", ()=>{
-  if (curMonth === 11){ alert("Le tour 12 est le dernier : créez un nouvel exercice pour continuer."); return; }
+  if (curMonth === 11){ alert("Le tour 12 est le dernier : créez une nouvelle partie pour continuer."); return; }
   const m = month();
   const {draft} = simulate(m, m.sim, compute(m));
-  if (!confirm("Remplacer les données du Tour " + (curMonth+2) + " — exercice " + curYear + " — par cette simulation ?")) return;
+  if (!confirm("Remplacer les données du Tour " + (curMonth+2) + " (partie " + curYear + ") par cette simulation ?")) return;
   const d = cur(); d[curMonth+1] = draft; saveYearData(curYear, d);
   flashSave();
   selectMonth(curMonth+1);
